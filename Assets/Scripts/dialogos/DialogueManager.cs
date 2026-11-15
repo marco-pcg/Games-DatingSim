@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class DialogueManager : MonoBehaviour
 {
@@ -14,6 +15,7 @@ public class DialogueManager : MonoBehaviour
     
     private void Awake()
     {
+        dialogueInfo = new Queue<DialogueBase.Info>();
         if (instance != null)
         {
 
@@ -37,7 +39,13 @@ public class DialogueManager : MonoBehaviour
 
     public float delay = 0.001f;
     private bool isDialogueOption;
-    private bool isCurrentlyTyping;
+    private bool isCurrentlyTyping; // Locks the active dialogue until its lines end.
+    private Coroutine typing;
+    private DialogueBase.Info typingLine;
+    private bool waitingForChoice;
+    private bool hasCompleted;
+    [SerializeField] private string completedScene;
+    public UnityEvent onDialogueCompleted = new UnityEvent();
     private int optionsAmount;
     public Text questionText;
 
@@ -54,8 +62,7 @@ public class DialogueManager : MonoBehaviour
 
     private void Start()
     {
-        root.SetActive(true);
-        dialogueInfo = new Queue<DialogueBase.Info>();
+        if (root != null) root.SetActive(true);
     }
     
     private GameObject[] GetAllOptionButtons()
@@ -80,7 +87,7 @@ public class DialogueManager : MonoBehaviour
 }
     public void EnqueueDialogue(DialogueBase db)
     {
-        if (isCurrentlyTyping)
+        if (db == null || isCurrentlyTyping)
         {
             return;
         }
@@ -89,6 +96,10 @@ public class DialogueManager : MonoBehaviour
             isCurrentlyTyping = true;
         }
 
+        optionsAmount = 0;
+        waitingForChoice = false;
+        hasCompleted = false;
+        if (dialogueOptionUI != null) dialogueOptionUI.SetActive(false);
         currentDialogue = db;
         dialogueBox.SetActive(true);
         dialogueInfo.Clear();
@@ -146,7 +157,8 @@ public class DialogueManager : MonoBehaviour
                 currentOptionButtons[i].SetActive(true);
 
                 // Configura o texto do botão
-                Transform childTransform = currentOptionButtons[i].transform.GetChild(0);
+                Transform childTransform = currentOptionButtons[i].transform.childCount > 0
+                    ? currentOptionButtons[i].transform.GetChild(0) : null;
                 if (childTransform != null)
                 {
                     TextMeshProUGUI buttonText = childTransform.GetComponent<TextMeshProUGUI>();
@@ -193,7 +205,7 @@ public class DialogueManager : MonoBehaviour
             isDialogueOption = false;
         }
 
-        foreach (DialogueBase.Info info in db.dialogueInfo)
+        foreach (DialogueBase.Info info in db.dialogueInfo ?? new DialogueBase.Info[0])
         {
             dialogueInfo.Enqueue(info);
         }
@@ -204,19 +216,16 @@ public class DialogueManager : MonoBehaviour
 
     public void DequeueDialogue()
     {
-        
+        if (!isCurrentlyTyping) return;
+        if (typing != null)
+        {
+            StopCoroutine(typing);
+            typing = null;
+            dialogueText.text = typingLine.myText;
+            return; // First click reveals the line; the next advances it.
+        }
         if (dialogueInfo.Count == 0)
         {
-
-            if (optionsAmount == 0)
-            {
-                SceneManager.LoadScene("dia5");
-                //root.SetActive(false);
-                //botaodelugar.interactable = false;
-
-            }
-            
-
             EndOfDialogue();
             return;
         }
@@ -238,7 +247,8 @@ public class DialogueManager : MonoBehaviour
         }
 
 
-        StartCoroutine(TypeText(info));
+        typingLine = info;
+        if (!string.IsNullOrEmpty(info.myText)) typing = StartCoroutine(TypeText(info));
     }
 
 
@@ -305,32 +315,61 @@ public class DialogueManager : MonoBehaviour
             dialogueText.text += c;
             yield return null;
         }
+        typing = null;
     }
 
     public void EndOfDialogue()
     {
-        //eventualmente quando formos pra proxima cena ela será chamada aqui
-        dialogueBox.SetActive(false);
-        OptionInfo();
+        if (!isCurrentlyTyping) return;
+        if (typing != null) StopCoroutine(typing);
+        typing = null;
+        isCurrentlyTyping = false;
+        if (dialogueBox != null) dialogueBox.SetActive(false);
+        waitingForChoice = isDialogueOption && optionsAmount > 0;
+        if (dialogueOptionUI != null) dialogueOptionUI.SetActive(waitingForChoice);
+        if (!waitingForChoice) CompleteDialogue();
     }
 
     public void DeactivateAllOptionButtons()
     {
-        dialogueOptionUI.SetActive(false);
+        if (dialogueOptionUI != null) dialogueOptionUI.SetActive(false);
     }
 
-    private void OptionInfo()
+    public void SelectOption(int index)
     {
-        if (isDialogueOption)
-        {
-            dialogueOptionUI.SetActive(true);
-        }
-        isCurrentlyTyping = false;
-
+        if (!waitingForChoice || !(currentDialogue is DialogueOptions options) ||
+            options.optionsInfo == null || index < 0 || index >= options.optionsInfo.Length)
+            return;
+        DialogueOptions.Options option = options.optionsInfo[index];
+        if (option == null) return;
+        waitingForChoice = false; // Ignore repeated pointer events.
+        DeactivateAllOptionButtons();
+        if (option.increasesAffection && option.targetCharacter != null)
+            option.targetCharacter.aumentoAfeto();
+        option.myEvent?.Invoke();
+        // An event may itself start dialogue or change the scene.
+        if (this == null || isCurrentlyTyping) return;
+        if (option.nextDialogue != null) EnqueueDialogue(option.nextDialogue);
+        else CompleteDialogue();
     }
 
+    private void CompleteDialogue()
+    {
+        if (hasCompleted) return;
+        hasCompleted = true;
+        string destination = currentDialogue != null && !string.IsNullOrWhiteSpace(currentDialogue.nextScene)
+            ? currentDialogue.nextScene : completedScene;
+        onDialogueCompleted.Invoke();
+        if (this == null || isCurrentlyTyping || string.IsNullOrWhiteSpace(destination)) return;
+        if (Application.CanStreamedLevelBeLoaded(destination)) SceneManager.LoadScene(destination);
+        else Debug.LogWarning($"Dialogue destination '{destination}' is not enabled in the build.");
+    }
 
-    
+    private void OnDestroy()
+    {
+        if (instance == this) instance = null;
+    }
+
     public Color hexToColor(string hex)
     {
         hex = hex.Replace("0x", ""); // In case the string is formatted 0xFFFFFF

@@ -2826,6 +2826,10 @@ MonoBehaviour:
   questionText: {fileID: 1811881802}
   nameHolder: {fileID: 999890448}
   currentDialogue: {fileID: 0}
+  completedScene: dia5
+  onDialogueCompleted:
+    m_PersistentCalls:
+      m_Calls: []
   root: {fileID: 2080413974}
   anim:
   - {fileID: 2038784205}

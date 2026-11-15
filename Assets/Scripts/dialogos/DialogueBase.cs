@@ -7,6 +7,9 @@ using static CharacterProfile;
 public class DialogueBase : ScriptableObject
 {
 
+    [Tooltip("Optional scene to load when this dialogue finishes. Empty uses the scene manager default.")]
+    public string nextScene;
+
     [Header("Insert Characters Below")]
     public CharacterProfile[] characters = new CharacterProfile[4];
 

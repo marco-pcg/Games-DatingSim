@@ -5,6 +5,11 @@ using UnityEngine.SceneManagement;
 
 public class Play : MonoBehaviour
 {
+    public void ContinueGame()
+    {
+        SaveManager.Instance.OnPlay();
+    }
+
     // Start is called before the first frame update
     public void PlayGame()
     {

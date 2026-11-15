@@ -18,6 +18,7 @@ public class GameManager : MonoBehaviour
     // Informações do jogador
     public string playerName;
     public int affectionPoints;
+    public int currentDay = 1;
 
     // Gênero selecionado
     public string selectedGender;
@@ -39,14 +40,24 @@ public class GameManager : MonoBehaviour
         else
         {
             Destroy(gameObject);
+            return;
         }
 
         //Verifica se o Loading foi instanciado
         if(GameObject.Find("Loading") == null) {
-            GameObject loading = Instantiate(Resources.Load<GameObject>("Prefabs/Loading"));
-            loading.name = "Loading";
+            GameObject prefab = Resources.Load<GameObject>("Prefabs/Loading");
+            if (prefab != null)
+            {
+                GameObject loading = Instantiate(prefab);
+                loading.name = "Loading";
+            }
         }
 
+    }
+
+    private void OnDestroy()
+    {
+        if (Instance == this) Instance = null;
     }
 
     public void LoadNextScene(string NextScene)
@@ -58,34 +69,39 @@ public class GameManager : MonoBehaviour
     // Método que deve ser chamado no fim de cada dia para salvar o jogo (Pode ser substituído por "SaveManager.Instance.SaveGame();" diretamente)
     public void OnDayEnd()
     {
-        SaveManager.Instance.SaveGame();
+        currentDay = 5; // The next implemented day after day 1.
+        SaveManager.Instance.SaveDayEnd(currentDay);
     }
 
     // Método para carregar as informações salvas
     public void LoadData(SaveData data)
     {
+        if (data == null) return;
+        currentDay = data.day;
         this.playerName = data.playerName;
         this.affectionPoints = data.affectionPoints;
         this.selectedGender = data.selectedGender;
-        this.selectedDialogueBox = data.selectedDialogueBox;
-        this.playerSprite = data.playerSprite;
-        // Carregar cena correspondente ao dia salvo (Ainda não implementado)
-        // LoadNextScene("");
+        // Appearance is rebound by each scene from the saved gender identifier.
+        selectedDialogueBox = null;
+        playerSprite = null;
+        // SaveManager.OnPlay restores the checkpoint scene after loading this state.
     }
 
     // Método para atualizar as informações salvas
     public void SaveData(ref SaveData data)
     {
-        data.affectionPoints = this.affectionPoints;
-        data.day = data.day + 1;
+        if (data == null) data = new SaveData();
+        SavePlayerInfo(ref data);
+        data.affectionPoints = affectionPoints;
+        data.day = currentDay;
     }
 
     // Método para atualizar as informações do jogador (nome e gênero)
     public void SavePlayerInfo(ref SaveData data)
     {
+        if (data == null) data = new SaveData();
         data.playerName = this.playerName;
         data.selectedGender = this.selectedGender;
-        data.selectedDialogueBox = this.selectedDialogueBox;
-        data.playerSprite = this.playerSprite;
+
     }
 }

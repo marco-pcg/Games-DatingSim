@@ -7,7 +7,7 @@ using UnityEditor;
 using UnityEditorInternal;
 
 
-[CustomEditor(typeof(AlphabetDataDrawer))]
+[CustomEditor(typeof(AlphabethData))]
 [CanEditMultipleObjects]
 [System.Serializable]
 public class AlphabetDataDrawer : Editor
@@ -20,9 +20,9 @@ public class AlphabetDataDrawer : Editor
     private void OnEnable()
     {
         InitializeReordableList(ref AlphabetPlainLists, "AlphabetPlain", "Alphabet Plain");
-        InitializeReordableList(ref AlphabetPlainLists, "AlphabetNormal", "Alphabet Normal");
-        InitializeReordableList(ref AlphabetPlainLists, "AlphabetHighlighted", "Alphabet Highlighted");
-        InitializeReordableList(ref AlphabetPlainLists, "AlphabetWrong", "Alphabet Wrong");
+        InitializeReordableList(ref AlphabetNormalLists, "AlphabetNormal", "Alphabet Normal");
+        InitializeReordableList(ref AlphabetHighlightedLists, "AlphabetHighlighted", "Alphabet Highlighted");
+        InitializeReordableList(ref AlphabetWrongLists, "AlphabetWrong", "Alphabet Wrong");
 
     }
 

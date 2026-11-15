@@ -1,0 +1,10 @@
+{
+  "name": "DatingSim.Editor",
+  "references": [],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

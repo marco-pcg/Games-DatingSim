@@ -1,0 +1,63 @@
+name: Unity verification
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  project-validation:
+    runs-on: ubuntu-latest
+    outputs:
+      unity-configured: ${{ steps.license.outputs.configured }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Test the scene validator
+        run: python3 -m unittest discover -s tools/tests -v
+      - name: Validate scene destinations and build metadata
+        run: python3 tools/validate_project.py
+      - name: Check Unity license configuration
+        id: license
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        run: |
+          if [ -n "$UNITY_LICENSE" ] && [ -n "$UNITY_EMAIL" ] && [ -n "$UNITY_PASSWORD" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Unity tests skipped: configure UNITY_LICENSE, UNITY_EMAIL, and UNITY_PASSWORD. Static validation still runs."
+          fi
+
+  unity-tests:
+    needs: project-validation
+    if: needs.project-validation.outputs.unity-configured == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        testMode: [editmode, playmode]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Run Unity regression tests
+        uses: game-ci/unity-test-runner@32e57712352b500e17974b245a6dce9e11a73213 # v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          unityVersion: 2021.3.23f1
+          testMode: ${{ matrix.testMode }}
+          artifactsPath: artifacts/${{ matrix.testMode }}
+      - name: Upload test results and editor logs
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: unity-${{ matrix.testMode }}-results
+          path: artifacts/${{ matrix.testMode }}
+          if-no-files-found: warn

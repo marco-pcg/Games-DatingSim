@@ -52,7 +52,7 @@ public class GameManager : MonoBehaviour
     public void LoadNextScene(string NextScene)
     {
         // Carrega a próxima cena
-        SceneManager.LoadScene(NextScene);
+        SceneRoutes.Load(NextScene);
     }
 
     // Método que deve ser chamado no fim de cada dia para salvar o jogo (Pode ser substituído por "SaveManager.Instance.SaveGame();" diretamente)

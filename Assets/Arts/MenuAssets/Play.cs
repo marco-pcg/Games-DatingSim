@@ -8,7 +8,7 @@ public class Play : MonoBehaviour
     // Start is called before the first frame update
     public void PlayGame()
     {
-        SceneManager.LoadScene("dia1", LoadSceneMode.Single);
+        SceneRoutes.Load(SceneRoutes.CharacterSetup);
     }
 
 }

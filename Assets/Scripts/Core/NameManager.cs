@@ -14,11 +14,16 @@ public class NameManager : MonoBehaviour
         // Adiciona listener ao botão
         confirmButton.onClick.AddListener(ConfirmName);
     }
-    private void GetText(string name)
+    private void OnDisable()
+    {
+        confirmButton.onClick.RemoveListener(ConfirmName);
+    }
+
+    public void GetText(string name)
     {
         // Registra o nome digitado
         Debug.Log("Typed name: " + name);
-        playerName = name;
+        playerName = name == null ? "" : name.Trim();
     }
 
     private void ConfirmName()
@@ -38,7 +43,7 @@ public class NameManager : MonoBehaviour
 
             // Carrega a próxima cena
             // PrefabUtility.SaveAsPrefabAsset(player,"Assets/player.prefab")
-            GameManager.Instance.LoadNextScene("ner_scenes");
+            GameManager.Instance.LoadNextScene(SceneRoutes.FirstDay);
         }
     }
 }

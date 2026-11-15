@@ -1,50 +1,40 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class Scenery : MonoBehaviour
 {
-    /* Para os arrays: P = 0, F = 1, S = 3, M = 4 */
-
-    // Atualizar com o conjunto de strings para cada local
-    private string[][] strings = new string[][]
-    {
-        new string[]{"String PC 1", "String PC 2", "String PC 3", "String PC 4"},
-        new string[]{"String Flip 1", "String Flip 2", "String Flip 3", "String Flip 4"},
-        new string[]{"String Solda 1", "String Solda 2", "String Solda 3", "String Solda 4"},
-        new string[]{"String Mesa 1", "String Mesa 2", "String Mesa 3", "String Mesa 4"}
-    };
-
-    // Colocar o sprite do objeto da cena a mudar de imagem baseado no cenário
+    // Indices: PC = 0, Flip = 1, Solda = 2, Mesa = 3.
     public SpriteRenderer spriteRenderer;
-
-    // Colocar as imagens a serem usadas para cada local
     public Sprite[] images = new Sprite[4];
-
-    // Colocar os sets de dialogo para cada local
     public GameObject[] dialogueSets = new GameObject[4];
-
-    // Conjunto ativo de falas
     private GameObject currentDialogueSet;
 
-    private void Awake() {
-        foreach (GameObject dialogueSet in dialogueSets) {
-            dialogueSet.SetActive(false);
-        }
+    private void Awake()
+    {
+        if (dialogueSets == null) return;
+        foreach (GameObject dialogueSet in dialogueSets)
+            if (dialogueSet != null) dialogueSet.SetActive(false);
     }
 
-    // Script é adicionado aos 4 botões, cada um envia seus parâmetros
-    public void OnClick(char scenery, int character) {
-        // Descomentar quando o script conversa for adicionado
-        // conversa.scenery = scenery;
+    // Retained for callers that supply the location and character index.
+    public void OnClick(char scenery, int character)
+    {
+        SelectScenery(character);
+    }
 
-        // Descomentar quando o script selectCharacter for adicionado
-        // selectCharacter.character = strings[character];
+    // A single int parameter can also be wired directly to a Unity UI Button.
+    public void SelectScenery(int index)
+    {
+        if (spriteRenderer == null || images == null || dialogueSets == null ||
+            index < 0 || index >= images.Length || index >= dialogueSets.Length ||
+            images[index] == null || dialogueSets[index] == null)
+        {
+            Debug.LogWarning($"Scenery index {index} is not configured.", this);
+            return;
+        }
 
-        // Coloca a imagem do novo cenário
-        spriteRenderer.sprite = images[character];
-
-        currentDialogueSet.SetActive(false);
-        dialogueSets[character].SetActive(true);
+        if (currentDialogueSet != null) currentDialogueSet.SetActive(false);
+        spriteRenderer.sprite = images[index];
+        currentDialogueSet = dialogueSets[index];
+        currentDialogueSet.SetActive(true);
     }
 }

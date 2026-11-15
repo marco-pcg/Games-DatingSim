@@ -1,0 +1,8 @@
+{
+  "name": "DatingSim.PlayMode",
+  "references": [],
+  "includePlatforms": [],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

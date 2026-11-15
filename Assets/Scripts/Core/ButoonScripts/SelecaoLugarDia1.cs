@@ -1,40 +1,33 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class SelecaoLugarDia1 : MonoBehaviour
 {
     [SerializeField] private Button b1, b2, b3, b4;
     public static char selec = 'N';
-    
 
     private void Awake()
     {
-        b1.onClick.AddListener(() => Selecionar('F'));
-        b2.onClick.AddListener(() => Selecionar('M'));
-        b3.onClick.AddListener(() => Selecionar('S'));
-        b4.onClick.AddListener(() => Selecionar('P'));
+        Configure(b1, 'F');
+        Configure(b2, 'M');
+        Configure(b3, 'S');
+        Configure(b4, 'P');
     }
 
-    private void Selecionar(char lugar)
+    private void Configure(Button button, char location)
     {
-        if (lugar == 'S')
+        if (button == null) return;
+        button.interactable = SceneRoutes.IsEnabled(SceneRoutes.Location(1, location));
+        button.onClick.AddListener(() => Selecionar(location));
+    }
+
+    private void Selecionar(char location)
+    {
+        string destination = SceneRoutes.Location(1, location);
+        if (SceneRoutes.IsEnabled(destination))
         {
-            SceneManager.LoadScene("dia1solda");
-            
+            selec = location;
+            SceneRoutes.Load(destination);
         }
-        if (lugar == 'P')
-        {
-            SceneManager.LoadScene("dia1pc");
-            
-        }
-        else
-        {
-            Debug.Log("nao deu");
-        }
-        // Aqui você pode colocar a lógica para fechar a seleção e continuar o fluxo,
-        // mas como pediu só para seleção, deixei só o set da variável.
-        // Exemplo:
-        // gameObject.SetActive(false);
     }
 }

@@ -1,16 +1,17 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class NextSceneGender : MonoBehaviour
 {
+    [SerializeField] private GameObject maleDialogueBox;
+    [SerializeField] private GameObject femaleDialogueBox;
+    [SerializeField] private Sprite maleSprite;
+    [SerializeField] private Sprite femaleSprite;
+
     private void Start()
     {
-        // Acessa informação de gênero guardada no GameManager
-        string selectedGender = GameManager.Instance.selectedGender;
-        GameObject selectedDialogueBox = GameManager.Instance.selectedDialogueBox;
-
-        // Usa os dados de gênero como necessário
-        Debug.Log("Selected gender in next scene: " + selectedGender);
+        if (GameManager.Instance == null) return;
+        bool male = GameManager.Instance.selectedGender == "Male";
+        GameManager.Instance.selectedDialogueBox = male ? maleDialogueBox : femaleDialogueBox;
+        GameManager.Instance.playerSprite = male ? maleSprite : femaleSprite;
     }
 }
